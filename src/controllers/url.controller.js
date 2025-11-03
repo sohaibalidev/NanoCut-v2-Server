@@ -15,14 +15,11 @@ exports.createShortUrl = async (req, res) => {
 
     let shortCode;
     let attempts = 0;
-
     do {
       shortCode = generateShortCode();
       attempts++;
-
       const existingUrl = await Url.findOne({ shortCode });
       if (!existingUrl) break;
-
       if (attempts > 5) {
         return res.status(500).json({
           success: false,
@@ -42,13 +39,13 @@ exports.createShortUrl = async (req, res) => {
     }
 
     const expiresAt = calculateExpirationDate(expiresIn);
-
     const newUrl = new Url({
       shortCode,
       originalUrl,
       customName: customName || undefined,
       userId,
       expiresAt,
+      isActive: true,
     });
 
     await newUrl.save();
@@ -63,6 +60,7 @@ exports.createShortUrl = async (req, res) => {
         expiresAt: newUrl.expiresAt,
         clicks: newUrl.clicks,
         createdAt: newUrl.createdAt,
+        isActive: newUrl.isActive,
       },
     });
   } catch (error) {
@@ -78,7 +76,6 @@ exports.getUserUrls = async (req, res) => {
   try {
     const userId = req.user._id;
     const urls = await Url.findByUserId(userId);
-
     const formattedUrls = urls.map((url) => ({
       id: url._id,
       shortCode: url.shortCode,
@@ -87,12 +84,9 @@ exports.getUserUrls = async (req, res) => {
       expiresAt: url.expiresAt,
       clicks: url.clicks,
       createdAt: url.createdAt,
+      isActive: url.isActive,
     }));
-
-    res.json({
-      success: true,
-      data: formattedUrls,
-    });
+    res.json({ success: true, data: formattedUrls });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -105,25 +99,17 @@ exports.getUserUrls = async (req, res) => {
 exports.redirectToOriginalUrl = async (req, res) => {
   try {
     const { shortCode } = req.params;
-
     const url = await Url.findByShortCode(shortCode);
 
     if (!url) {
-      return res.status(404).json({
-        success: false,
-        message: 'URL not found',
-      });
+      return res.status(404).json({ success: false, message: 'URL not found' });
     }
 
-    if (url.isExpired) {
-      return res.status(410).json({
-        success: false,
-        message: 'URL has expired',
-      });
+    if (url.isExpired || !url.isActive) {
+      return res.status(410).json({ success: false, message: 'URL is inactive or expired' });
     }
 
     await url.incrementClicks();
-
     res.json({ success: true, url: url.originalUrl });
   } catch (error) {
     res.status(500).json({
@@ -138,22 +124,12 @@ exports.deleteUrl = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user._id;
-
     const url = await Url.findOne({ _id: id, userId });
-
     if (!url) {
-      return res.status(404).json({
-        success: false,
-        message: 'URL not found',
-      });
+      return res.status(404).json({ success: false, message: 'URL not found' });
     }
-
-    await url.deactivate();
-
-    res.json({
-      success: true,
-      message: 'URL deleted successfully',
-    });
+    await url.deleteOne();
+    res.json({ success: true, message: 'URL deleted permanently' });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -163,16 +139,83 @@ exports.deleteUrl = async (req, res) => {
   }
 };
 
+exports.toggleUrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const url = await Url.findOne({ _id: id, userId });
+
+    if (!url) {
+      return res.status(404).json({ success: false, message: 'URL not found' });
+    }
+
+    await url.toggleActivation();
+
+    res.json({
+      success: true,
+      message: `URL ${url.isActive ? 'activated' : 'deactivated'} successfully`,
+      data: {
+        isActive: url.isActive,
+        expiresAt: url.expiresAt,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error toggling URL status',
+      error: error.message,
+    });
+  }
+};
+
+exports.deactivateUrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const url = await Url.findOne({ _id: id, userId });
+    if (!url) {
+      return res.status(404).json({ success: false, message: 'URL not found' });
+    }
+    url.isActive = false;
+    await url.save();
+    res.json({ success: true, message: 'URL deactivated successfully' });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deactivating URL',
+      error: error.message,
+    });
+  }
+};
+
+exports.activateUrl = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const url = await Url.findOne({ _id: id, userId });
+    if (!url) {
+      return res.status(404).json({ success: false, message: 'URL not found' });
+    }
+    url.isActive = true;
+    await url.save();
+    res.json({ success: true, message: 'URL reactivated successfully' });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error activating URL',
+      error: error.message,
+    });
+  }
+};
+
 exports.getUrlStats = async (req, res) => {
   try {
     const userId = req.user._id;
-
     const totalUrls = await Url.countDocuments({ userId, isActive: true });
     const totalClicks = await Url.aggregate([
-      { $match: { userId: userId, isActive: true } },
+      { $match: { userId, isActive: true } },
       { $group: { _id: null, total: { $sum: '$clicks' } } },
     ]);
-
     res.json({
       success: true,
       data: {

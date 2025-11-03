@@ -28,7 +28,7 @@ const checkHealth = (_, res) => {
 
 /* Public routes */
 router.use('/auth', require('./auth.routes'));
-router.use('/url/', authMiddleware.protect, require('./url.routes'));
+router.use('/url/', require('./url.routes'));
 
 router.get('/health', checkHealth);
 

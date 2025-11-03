@@ -71,12 +71,35 @@ urlSchema.methods.deactivate = function () {
   return this.save();
 };
 
+urlSchema.methods.reactivate = function () {
+  this.isActive = true;
+  const now = new Date();
+  const newExpiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  this.expiresAt = newExpiry;
+  return this.save();
+};
+
+// NEW: Toggle activation method
+urlSchema.methods.toggleActivation = function () {
+  this.isActive = !this.isActive;
+  if (this.isActive) {
+    const now = new Date();
+    const newExpiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    this.expiresAt = newExpiry;
+  }
+  return this.save();
+};
+
+urlSchema.methods.deleteUrl = function () {
+  return this.deleteOne();
+};
+
 urlSchema.statics.findByShortCode = function (shortCode) {
-  return this.findOne({ shortCode, isActive: true });
+  return this.findOne({ shortCode });
 };
 
 urlSchema.statics.findByUserId = function (userId) {
-  return this.find({ userId, isActive: true }).sort({ createdAt: -1 });
+  return this.find({ userId }).sort({ createdAt: -1 });
 };
 
 urlSchema.statics.findActiveUrls = function () {
