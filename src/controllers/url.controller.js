@@ -106,7 +106,7 @@ exports.redirectToOriginalUrl = async (req, res) => {
     }
 
     if (url.isExpired || !url.isActive) {
-      return res.status(410).json({ success: false, message: 'URL is inactive or expired' });
+      return res.status(411).json({ success: false, message: 'URL is inactive or expired' });
     }
 
     await url.incrementClicks();

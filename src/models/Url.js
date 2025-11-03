@@ -79,7 +79,6 @@ urlSchema.methods.reactivate = function () {
   return this.save();
 };
 
-// NEW: Toggle activation method
 urlSchema.methods.toggleActivation = function () {
   this.isActive = !this.isActive;
   if (this.isActive) {

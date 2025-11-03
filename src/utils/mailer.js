@@ -77,7 +77,6 @@ class EmailService {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Login Link - ${appName}</title>
     <style>
-        /* Reset and base styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
@@ -229,7 +228,6 @@ class EmailService {
             font-weight: 600;
         }
         
-        /* Mobile responsiveness */
         @media only screen and (max-width: 600px) {
             .email-wrapper {
                 margin: 16px 8px;
