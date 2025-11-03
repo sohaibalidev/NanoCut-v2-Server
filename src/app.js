@@ -9,13 +9,13 @@
  *  - Centralized 404 & error handling
  */
 
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const cookieParser = require("cookie-parser");
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 
-const appConfig = require("./config/app.config");
-const indexRoutes = require("./routes/index.routes");
+const appConfig = require('./config/app.config');
+const indexRoutes = require('./routes/index.routes');
 
 const app = express();
 
@@ -24,14 +24,14 @@ const app = express();
    =========================== */
 
 // Body parsing
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Cookie parsing
 app.use(cookieParser());
 
 // Security headers (enabled in non-dev environments)
-if (appConfig.NODE_ENV !== "development") {
+if (appConfig.NODE_ENV !== 'development') {
   app.use(
     helmet({
       crossOriginResourcePolicy: false,
@@ -57,15 +57,20 @@ app.use(
    ROOT & HEALTH ROUTES
    =========================== */
 
-app.get("/", (req, res) => {
+app.get('/', (req, res) => {
   res.status(200).json({
-    name: "NanoCut API",
-    description:
-      "Precision URL shortener built with Node.js, Express, and MongoDB.",
-    author: "Muhammad Sohaib Ali",
-    repository: "https://github.com/sohaibalidev/NanoCut",
-    frontend: appConfig.FRONTEND_URL,
-    status: "online",
+    name: 'NanoCut API',
+    description: 'Precision URL shortener built with Node.js, Express, and MongoDB.',
+    repositories: {
+      backend: 'https://github.com/sohaibalidev/nanocut-v2-Server',
+      frontend: 'https://github.com/sohaibalidev/nanocut-v2-client',
+    },
+    live: {
+      frontend: 'https://nanocut-v2.netlify.app',
+      backend: 'https://nanocut-v2-server.onrender.com',
+    },
+    author: 'Muhammad Sohaib Ali',
+    status: 'online',
   });
 });
 
@@ -73,7 +78,7 @@ app.get("/", (req, res) => {
    API ROUTES
    =========================== */
 
-app.use("/api", indexRoutes);
+app.use('/api', indexRoutes);
 
 /* ===========================
    404 HANDLER
@@ -91,31 +96,25 @@ app.use((req, res) => {
    =========================== */
 
 app.use((err, req, res, next) => {
-  if (appConfig.NODE_ENV === "development") console.error("Error:", err);
+  if (appConfig.NODE_ENV === 'development') console.error('Error:', err);
 
-  if (err.name === "ValidationError") {
+  if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map((e) => e.message);
-    return res
-      .status(400)
-      .json({ success: false, message: "Validation Error", errors });
+    return res.status(400).json({ success: false, message: 'Validation Error', errors });
   }
 
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
-    return res
-      .status(400)
-      .json({ success: false, message: `${field} already exists` });
+    return res.status(400).json({ success: false, message: `${field} already exists` });
   }
 
-  if (err.name === "JsonWebTokenError")
-    return res.status(401).json({ success: false, message: "Invalid token" });
+  if (err.name === 'JsonWebTokenError') return res.status(401).json({ success: false, message: 'Invalid token' });
 
-  if (err.name === "TokenExpiredError")
-    return res.status(401).json({ success: false, message: "Token expired" });
+  if (err.name === 'TokenExpiredError') return res.status(401).json({ success: false, message: 'Token expired' });
 
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || "Internal server error",
+    message: err.message || 'Internal server error',
   });
 });
 
