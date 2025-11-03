@@ -28,19 +28,40 @@ exports.register = async (req, res) => {
     const loginToken = user.generateLoginToken();
     await user.save({ validateBeforeSave: false });
 
-    await mailer.sendLoginEmail(email, loginToken);
+    try {
+      await mailer.sendLoginEmail(email, loginToken);
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Login link sent to your email',
-    });
+      res.status(200).json({
+        status: 'success',
+        message: 'Login link sent to your email',
+      });
+    } catch (emailError) {
+      console.error('Email sending failed:', emailError.message);
+
+      if (emailError.message.includes('disabled') || emailError.message.includes('timeout')) {
+        res.status(200).json({
+          status: 'success',
+          message: "Login created successfully. If you don't receive an email, please contact support.",
+          debugToken: process.env.NODE_ENV === 'development' ? loginToken : undefined,
+        });
+      } else {
+        throw emailError;
+      }
+    }
   } catch (error) {
     console.error('Register error:', error);
 
-    res.status(500).json({
-      status: 'error',
-      message: 'Failed to send login link',
-    });
+    if (error.message.includes('Email sending failed')) {
+      res.status(500).json({
+        status: 'error',
+        message: 'Temporary email service issue. Please try again in a few minutes.',
+      });
+    } else {
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to process login request',
+      });
+    }
   }
 };
 
