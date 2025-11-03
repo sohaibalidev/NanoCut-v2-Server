@@ -25,18 +25,9 @@ module.exports = {
   JWT_SECRET: process.env.JWT_SECRET || 'nanocut_secret',
   JWT_EXPIRY: process.env.JWT_EXPIRY || '30d',
 
-  // Email (for login links and notifications)
-  // EMAIL_SERVICE: process.env.EMAIL_SERVICE || 'gmail',
-  // EMAIL_USERNAME: process.env.EMAIL_USERNAME,
-  // EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
-  // EMAIL_FROM: `${APP_NAME} <${process.env.EMAIL_USERNAME}>`,
-
-  SMTP_HOST: 'smtp.gmail.com',
-  SMTP_PORT: 587,
-  SMTP_SECURE: false,
-  SMTP_USER: process.env.SMTP_USER,
-  SMTP_PASS: process.env.SMTP_PASS,
-  SMTP_FROM: `${APP_NAME} <${process.env.EMAIL_USERNAME}>`,
+  // Email (Resend)
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  EMAIL_FROM: process.env.EMAIL_FROM,
 
   // Security
   MAX_AGE: parseInt(process.env.MAX_AGE, 10) || THIRTY_DAYS,
