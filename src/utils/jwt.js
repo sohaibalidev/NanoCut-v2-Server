@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 
 /**
  * Generate JWT token for user
@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
  */
 exports.generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
+    expiresIn: process.env.JWT_EXPIRES_IN || '30d',
   });
 };
 
@@ -28,12 +28,12 @@ exports.verifyToken = (token) => {
 exports.setTokenCookie = (res, token) => {
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, 
+    secure: true, 
+    sameSite: 'none',
+    maxAge: 30 * 24 * 60 * 60 * 1000, 
   };
 
-  res.cookie("token", token, cookieOptions);
+  res.cookie('token', token, cookieOptions);
 };
 
 /**
@@ -41,9 +41,9 @@ exports.setTokenCookie = (res, token) => {
  * @param {object} res - Express response object
  */
 exports.clearTokenCookie = (res) => {
-  res.clearCookie("token", {
+  res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
   });
 };
